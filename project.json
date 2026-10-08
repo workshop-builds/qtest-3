@@ -1,0 +1,6 @@
+{
+  "slug": "qtest-3",
+  "name": "Quiet Test",
+  "ticker": "QTEST",
+  "model": "claude-sonnet-5-5"
+}
