@@ -1,11 +1,13 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { BadgePreview } from './BadgePreview.tsx'
 import { FRAMES, type FrameId } from './frames.ts'
 import { PixelGrid, type Point } from './PixelGrid.tsx'
 import { MAX_TICKER_LENGTH, sanitizeTicker } from './ticker.ts'
 import { PALETTE } from './palette.ts'
+import { loadBadge, saveBadge } from './storage.ts'
+import { TEMPLATES } from './templates.ts'
 import { downloadCanvas, exportName, renderBadgeCanvas, renderBannerCanvas } from './export.ts'
-import { createPixels, floodFill, mirrorPixels, paintLine } from './pixels.ts'
+import { floodFill, mirrorPixels, paintLine } from './pixels.ts'
 import {
   beginStroke,
   canRedo,
@@ -31,13 +33,19 @@ const ACTION_CLASS =
   'min-h-11 min-w-11 rounded border-2 border-neutral-500 bg-neutral-900 px-3 font-bold text-white focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-amber-300 disabled:cursor-not-allowed disabled:opacity-40'
 
 export function Editor() {
-  const [history, setHistory] = useState<History>(() => createHistory(createPixels()))
+  const [saved] = useState(loadBadge)
+  const [history, setHistory] = useState<History>(() => createHistory(saved.pixels))
   const [color, setColor] = useState(4)
   const [mode, setMode] = useState<Mode>('draw')
-  const [ticker, setTicker] = useState('')
-  const [frame, setFrame] = useState<FrameId>('none')
+  const [ticker, setTicker] = useState(saved.ticker)
+  const [frame, setFrame] = useState<FrameId>(saved.frame)
   const [exportError, setExportError] = useState('')
   const pixels = history.present
+
+  // Save the drawing, ticker and frame to this browser on every change.
+  useEffect(() => {
+    saveBadge({ pixels, ticker, frame })
+  }, [pixels, ticker, frame])
 
   const download = (kind: 'badge' | 'banner') => {
     const render = kind === 'badge' ? renderBadgeCanvas : renderBannerCanvas
@@ -70,6 +78,22 @@ export function Editor() {
         onStrokeStart={() => setHistory(beginStroke)}
         onStrokeEnd={() => setHistory(endStroke)}
       />
+
+      <div role="group" aria-label="Templates" className="space-y-1">
+        <p className="text-sm font-bold text-white">Start from a template</p>
+        <div className="grid grid-cols-3 gap-2">
+          {TEMPLATES.map((t) => (
+            <button
+              key={t.id}
+              type="button"
+              className={ACTION_CLASS}
+              onClick={() => setHistory((h) => commit(h, t.pixels))}
+            >
+              {t.name}
+            </button>
+          ))}
+        </div>
+      </div>
 
       <div role="group" aria-label="History and mirror" className="grid grid-cols-3 gap-2">
         <button type="button" className={ACTION_CLASS} disabled={!canUndo(history)} onClick={() => setHistory(undo)}>

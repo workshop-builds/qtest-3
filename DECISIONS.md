@@ -55,3 +55,9 @@ Why: a ring outside the drawing means switching frames never covers or moves the
 Decision: the badge PNG draws `layoutBadge` at the largest whole-number cell size that fits 512x512 (8 to 14 px depending on ticker width and height), centered, so the 512 size is exact but the margin is not a multiple of the cell size. The banner draws the framed badge at 12 px per cell and the ticker at a whole-number scale on the right. Both PNGs have a solid #111111 background (not transparent), because the ticker is white and Black cells would vanish on a transparent one. Canvas creation is injectable, and tests use a fake canvas that records `fillRect` into a pixel buffer.
 
 Why: 512 is not a multiple of 36, so an exact whole-number fit is impossible. Integer scale with centering keeps every cell a hard-edged solid block, which is the requirement. A fake canvas lets the sampling tests run without a native canvas dependency, and the downloads use only `blob:` URLs.
+
+## 2026-10-09: Templates are generated in code; saving is validated, versioned JSON
+
+Decision: templates are built by small drawing helpers (rectangles, discs, symmetric rows, a star polygon, an auto outline) into frozen 32x32 palette-index grids, not stored as 1024-number literals. The saved badge is `{v:1, pixels, ticker, frame}` as JSON under `pixel-badge:v1`, written on every change and validated strictly on load; any failure gives an empty badge. Undo history is not saved.
+
+Why: code is easier to review and tweak than raw arrays, and palette colors are looked up by name so they cannot drift. Strict validation means a damaged or hand-edited entry can never crash the editor. Skipping history keeps the stored data small and the format simple, since the requirement is to get the badge back.

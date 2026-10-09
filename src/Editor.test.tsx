@@ -237,3 +237,55 @@ describe('Editor export buttons', () => {
     vi.restoreAllMocks()
   })
 })
+
+describe('Editor templates and saving', () => {
+  const filled = () => screen.getAllByTestId(/^cell-/).filter((c) => (c.getAttribute('data-color') ?? '') !== '').length
+
+  it('offers all six templates', () => {
+    render(<Editor />)
+    for (const name of ['Robot head', 'Rocket', 'Flame', 'Star', 'Coin', 'Wrench']) {
+      expect(screen.getByRole('button', { name })).toBeInTheDocument()
+    }
+  })
+
+  it('loads a template as one undoable step and stays editable', () => {
+    render(<Editor />)
+    expect(filled()).toBe(0)
+    fireEvent.click(screen.getByRole('button', { name: 'Star' }))
+    const n = filled()
+    expect(n).toBeGreaterThan(60)
+    // Erase a cell of the template, then undo that edit and the template itself.
+    fireEvent.click(screen.getByRole('button', { name: 'Erase' }))
+    fireEvent.pointerDown(cell(16, 17), { pointerId: 1, button: 0 })
+    fireEvent.pointerUp(cell(16, 17), { pointerId: 1 })
+    expect(filled()).toBe(n - 1)
+    fireEvent.click(screen.getByRole('button', { name: 'Undo' }))
+    expect(filled()).toBe(n)
+    fireEvent.click(screen.getByRole('button', { name: 'Undo' }))
+    expect(filled()).toBe(0)
+    fireEvent.click(screen.getByRole('button', { name: 'Redo' }))
+    expect(filled()).toBe(n)
+  })
+
+  it('saves on every change and restores after a reload', () => {
+    const first = render(<Editor />)
+    fireEvent.click(screen.getByRole('button', { name: 'Coin' }))
+    fireEvent.change(screen.getByLabelText('Ticker'), { target: { value: 'qt$' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Rounded' }))
+    const n = filled()
+    expect(n).toBeGreaterThan(60)
+    first.unmount()
+    render(<Editor />)
+    expect(filled()).toBe(n)
+    expect((screen.getByLabelText('Ticker') as HTMLInputElement).value).toBe('QT$')
+    expect(screen.getByRole('button', { name: 'Rounded' })).toHaveAttribute('aria-pressed', 'true')
+  })
+
+  it('starts with an empty badge when saved data is corrupt', () => {
+    localStorage.setItem('pixel-badge:v1', '{"v":1,"pixels":"oops"')
+    render(<Editor />)
+    expect(filled()).toBe(0)
+    expect((screen.getByLabelText('Ticker') as HTMLInputElement).value).toBe('')
+    expect(screen.getByRole('button', { name: 'None' })).toHaveAttribute('aria-pressed', 'true')
+  })
+})

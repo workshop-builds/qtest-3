@@ -131,3 +131,16 @@ Checked on 2026-10-09 (claude-opus-5-5), against the PLAN.md criteria, by readin
 Not verified: a real browser download and a real PNG decode (jsdom has no canvas), or layout at 360x640. The two export buttons sit in a 2-column grid with `min-h-11`, which should fit.
 
 Non-blocking notes: the badge export's cell size varies with the ticker width (8 to 14 px), so a long ticker shrinks the badge. That is within the criteria. With an empty ticker, the banner shows only the badge.
+
+## 2026-10-09: Milestone 5, templates and saving in the browser (claude-sonnet-5-5)
+
+What changed:
+- Templates (`src/templates.ts`): six 32x32 grids built in code from palette indexes (robot head, rocket, flame, star, coin, wrench), each drawn with a black outline. They are frozen data; picking one is `commit(history, template.pixels)`, so it is one undo step and the drawing stays fully editable (edits copy the grid).
+- Saving (`src/storage.ts`): pixels, ticker and frame are saved as versioned JSON (`pixel-badge:v1`) in localStorage from an effect that runs on every change, and read once when the editor starts. `parseSaved` validates everything (version, 1024 cells, each cell null or a palette index, frame id, ticker string, which is re-sanitized). Missing, corrupt, blocked or full storage gives an empty badge or a false return, and never throws.
+- Editor: a "Start from a template" row of six 44 px buttons above the history buttons. The editor starts from the saved badge. Undo history is not saved, so after a reload the restored badge is the starting point.
+- Tests: `storage.test.ts` (six templates, each valid 32x32 with only palette colors and not empty, templates differ and are not mutated by edits; round-trip with a fake store and real localStorage; eleven corrupt inputs; throwing storage) and new `Editor.test.tsx` cases (six buttons, template as one undoable step and editable, save and restore across unmount, corrupt storage gives an empty badge). `test-setup.ts` clears localStorage before each test. `npm ci && npm test && npm run build` passes, 100/100 tests.
+- I checked the template art as ASCII dumps, but not in a real browser.
+
+Not checked: layout in a real browser at 360x640. The template row is 3 columns with `min-h-11`, which should fit 328 px, though "Robot head" is the longest label.
+
+Next: Milestone 6, phone polish and the one-minute flow. Grid cells still have no accessible names or keyboard access.
