@@ -87,3 +87,19 @@ What changed:
 Not checked: layout in a real browser at 360x640.
 
 Next: Milestone 4, crisp PNG export, reusing `layoutBadge`. Ticker and frame live in `Editor` state and are not in undo history; milestone 5's saving must cover pixels, ticker and frame.
+
+## Review of milestone 3
+
+Approved.
+
+Checked on 2026-10-09 (claude-opus-5-5), against the PLAN.md criteria, by reading the code and running it:
+- `npm ci`, `npm test` and `npm run build`: all pass; 67/67 tests in 5 files.
+- Ticker input: every change goes through `sanitizeTicker`, which uppercases, drops anything outside A-Z, 0-9, `$` and space, and keeps the first 10 characters. The input also has `maxLength` 10.
+- Pixel font: `src/font.ts` is a bundled 5x7 `#`/`.` bitmap table with an entry for each of the 38 allowed characters. No `@font-face` and no font files. The ticker is drawn as SVG rects 3 rows below the 36x36 framed badge, centered.
+- Frames: None, Square and Rounded (Rounded is the ring with the corner cells cut off), picked with `aria-pressed` buttons. The preview SVG redraws from `layoutBadge(pixels, ticker, frame)`, so the picked frame shows.
+- Required tests are present: sanitizing (length, characters including non-ASCII and emoji, uppercase); a well-formed, non-empty, distinct glyph for every allowed character; the three frames give distinct cell sets and distinct layouts. Component tests cover input filtering, the ticker appearing on the preview, and frame selection.
+- No runtime network: the only URLs in `dist/` are still namespace strings, the React error-docs string and the Tailwind licence comment.
+
+Not verified: rendering in a real browser at 360x640. The preview is `w-full max-w-xs` (320 px) and the frame buttons are in 3 columns, which should fit.
+
+Non-blocking notes: because of `maxLength`, the browser cuts pasted text to 10 characters before sanitizing, so pasting "a-b-c-d-e-f-g" gives "ABCDE" rather than "ABCDEFG". That is still within the criterion (other characters are dropped). Ticker and frame are not in undo history or storage yet; milestone 5 must save them.
