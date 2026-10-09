@@ -144,3 +144,19 @@ What changed:
 Not checked: layout in a real browser at 360x640. The template row is 3 columns with `min-h-11`, which should fit 328 px, though "Robot head" is the longest label.
 
 Next: Milestone 6, phone polish and the one-minute flow. Grid cells still have no accessible names or keyboard access.
+
+## Review of milestone 5
+
+Approved.
+
+Checked on 2026-10-09 (claude-opus-5-5), against the PLAN.md criteria, by reading the code and running it:
+- `npm ci`, `npm test` and `npm run build`: all pass; 100/100 tests in 7 files.
+- Templates: `src/templates.ts` builds six frozen 32x32 grids (Robot head, Rocket, Flame, Star, Coin, Wrench) from palette indexes looked up by name. An unknown name throws when the module loads, so a bad color cannot slip in. Picking one calls `commit(history, template.pixels)`, so it is one undo step and clears redo. Edits go through `setCell`, `paintLine` and `floodFill`, which copy the grid before changing it, so the frozen template is never changed and the drawing stays fully editable.
+- Saving: a `useEffect` on `[pixels, ticker, frame]` writes versioned JSON to `localStorage` (`pixel-badge:v1`) on every change. Undo and redo change `pixels`, so they are saved too. `useState(loadBadge)` reads the saved badge once at start-up for the history, the ticker and the frame.
+- Fallback: `parseSaved` rejects bad JSON, non-objects, a wrong version, a wrong cell count, cells that are not null or an integer from 0 to 15, a ticker that is not a string, and an unknown frame. It also re-sanitizes the ticker. `loadBadge` and `saveBadge` catch errors when storage throws. All of these give an empty badge or `false`, never a crash.
+- Required tests are present: each template is 32x32, uses only palette colors and is not empty (more than 60 filled cells); save/restore round-trips with a fake store and with jsdom localStorage; eleven corrupt inputs plus throwing storage. Component tests cover the six buttons, a template as one undoable and editable step, restore after unmount and remount, and corrupt storage giving an empty editor.
+- No runtime network: `dist/` still holds only the namespace, React error-doc and Tailwind licence URL strings.
+
+Not verified: a real browser reload, how the template art looks, and the layout at 360x640. The template row is 3 columns with `min-h-11`; "Robot head" may wrap to two lines in about 100 px but should still fit.
+
+Non-blocking notes: undo history is not saved, so after a reload Undo is disabled (the plan does not require saving it). Loading a template keeps the current ticker and frame, which is reasonable.
