@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { render, screen } from '@testing-library/react'
+import { render, screen, within } from '@testing-library/react'
 import planText from '../PLAN.md?raw'
 import App from './App.tsx'
 import { parsePlan } from './plan.ts'
@@ -33,15 +33,22 @@ describe('parsePlan', () => {
   })
 })
 
-describe('project page', () => {
-  it('shows the project name, what it will be, and the plan', () => {
+describe('About section', () => {
+  it('shows the project name, short description and every milestone', () => {
+    render(<App />)
+    const about = screen.getByRole('region', { name: 'About' })
+    expect(within(about).getByText('Quiet Test ($QTEST)')).toBeInTheDocument()
+    expect(within(about).getByText('Pixel Badge')).toBeInTheDocument()
+    expect(within(about).getByText('Test token. No roadmap, no promises')).toBeInTheDocument()
+    for (const m of parsePlan(planText)) {
+      expect(
+        within(about).getByRole('heading', { level: 4, name: `Milestone ${m.number}: ${m.title}` }),
+      ).toBeInTheDocument()
+    }
+  })
+
+  it('keeps the page title as the main heading', () => {
     render(<App />)
     expect(screen.getByRole('heading', { level: 1, name: 'Pixel Badge' })).toBeInTheDocument()
-    expect(screen.getByText('Quiet Test ($QTEST)')).toBeInTheDocument()
-    expect(screen.getByRole('heading', { name: 'What it will be' })).toBeInTheDocument()
-    expect(screen.getByRole('heading', { name: 'The plan' })).toBeInTheDocument()
-    for (const m of parsePlan(planText)) {
-      expect(screen.getByRole('heading', { level: 3, name: `Milestone ${m.number}: ${m.title}` })).toBeInTheDocument()
-    }
   })
 })

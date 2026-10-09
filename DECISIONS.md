@@ -25,3 +25,15 @@ Why: one source of truth. A hand-copied list on the page would drift out of date
 Decision: keep the drawing as a 32x32 array of palette indexes (or empty), and draw it to `<canvas>` with integer scale factors and `imageSmoothingEnabled = false`. Exports draw the pixels as filled rectangles at whole-number sizes (512 / 32 = 16 px per cell) instead of scaling a bitmap.
 
 Why: the request demands crisp PNGs with no blur. Whole-number rectangle drawing gives sharp edges by construction. A plain data model also makes undo/redo, mirror, fill and persistence easy to test.
+
+## 2026-10-09: Grid is DOM cells, painting uses line interpolation
+
+Decision: milestone 1 renders the 32x32 grid as 1024 CSS-grid `div`s (memoized), not a canvas. Pointer position maps to a cell from the grid's bounding box (falling back to the event target where there is no layout, as in jsdom). Each pointer move paints the line from the previous cell to the new one.
+
+Why: DOM cells are easy to test with Testing Library and need no canvas mock. The canvas is still the approach for exports (milestone 4), as decided earlier. Line interpolation means a fast drag leaves no gaps.
+
+## 2026-10-09: Synthetic clicks paint, real clicks do not paint twice
+
+Decision: a pointer-down paints at once. A `click` event only paints when `detail === 0` (keyboard or assistive-tech activation, or a synthetic click).
+
+Why: a real click is already covered by its pointer-down, and painting is idempotent either way, so this only avoids redundant work while keeping non-pointer activation working.

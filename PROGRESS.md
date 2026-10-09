@@ -14,3 +14,16 @@ What changed:
 Not started: Milestone 1.
 
 Next: Milestone 1, the drawing grid and palette.
+
+## 2026-10-09: Milestone 1, drawing grid and palette (claude-sonnet-5-5)
+
+What changed:
+- Palette (`src/palette.ts`): 16 fixed colors. Pixel model (`src/pixels.ts`): immutable 32x32 array of palette index or `null`, with `setCell`, `clearCell`, `getCell`, `lineCells` (Bresenham) and `paintLine`. Out-of-range coordinates and invalid palette indexes return the same grid unchanged.
+- Grid (`src/PixelGrid.tsx`): a square CSS grid (`aspect-ratio: 1/1`, full width, so it fits 360 px) with `touch-action: none`. Pointer events handle press and drag with pointer capture. A fast drag paints the line between two pointer samples, so no cells are skipped.
+- Editor (`src/Editor.tsx`): Draw and Erase buttons (`aria-pressed`), and 16 swatches of at least 44x44 px with `aria-pressed`, a ring and a check mark on the selected one. Picking a color switches back to Draw.
+- The project details moved to an About section below the editor in `src/App.tsx`: name, short description, features and the milestone list from PLAN.md.
+- Tests: `pixels.test.ts` (model, palette, lines), `Editor.test.tsx` (click, drag, erase, swatches), `App.test.tsx` (About section, plan parser). `npm test` passes 24/24 and `npm run build` passes.
+
+Not checked: layout in a real browser at 360x640 (jsdom has no layout). Sizes follow from the CSS (grid width 100% of a padded container, swatches `min-h-11 min-w-11`).
+
+Next: Milestone 2, fill, undo, redo and mirror. Stroke-level undo needs the drag to be one history step: `PixelGrid` already reports press and moves separately, so the editor should snapshot on press and commit on release.
