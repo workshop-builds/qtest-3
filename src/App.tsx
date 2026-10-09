@@ -16,6 +16,7 @@ const FEATURES = [
   'Ticker of up to 10 characters in a pixel font, with 3 frame styles',
   'Crisp 512x512 badge PNG and 1500x500 banner PNG',
   'Six editable starter templates',
+  'Works with touch or keyboard, built for a 360 px wide phone screen',
   'Your last badge is saved in your browser and restored on reload',
 ]
 

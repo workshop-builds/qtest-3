@@ -160,3 +160,16 @@ Checked on 2026-10-09 (claude-opus-5-5), against the PLAN.md criteria, by readin
 Not verified: a real browser reload, how the template art looks, and the layout at 360x640. The template row is 3 columns with `min-h-11`; "Robot head" may wrap to two lines in about 100 px but should still fit.
 
 Non-blocking notes: undo history is not saved, so after a reload Undo is disabled (the plan does not require saving it). Loading a template keeps the current ticker and frame, which is reasonable.
+
+## 2026-10-09: Milestone 6, phone polish and the one-minute flow (claude-sonnet-5-5)
+
+What changed:
+- Layout: templates and a "Go to downloads" link now sit above the grid; the export buttons have `id="export"`.
+- Accessibility: the grid is keyboard operable (focusable, arrow keys, Space/Enter, visible cursor and focus outline); the placeholder color was raised for contrast. Controls keep `min-h-11` and `focus-visible` outlines.
+- `scripts/check-dist.mjs` fails the build when `dist/` has an external URL in script/link/img (and similar) tags or CSS `url()`/`@import`; `npm run build` runs it.
+- README rewritten: app description, how to run, privacy promise. App feature list updated.
+- Tests (`src/polish.test.tsx`): scripted walkthrough (template, edit, ticker, frame, both downloads through blob URLs), keyboard grid, 44 px class and accessible-name checks, focus-style checks, WCAG contrast calculations for the colors used, dist-check unit tests. `npm ci && npm test && npm run build` passes, 123/123 tests.
+
+Not checked: layout in a real browser at 360x640. A headless Chromium screenshot was blocked in this session, so widths and horizontal scrolling are argued from the CSS only (grid `width: 100%`, 3-column button rows, `auto-fill minmax(44px, 1fr)` palette).
+
+Next: all six milestones are done; a later session could do a real-browser check.

@@ -72,13 +72,6 @@ export function Editor() {
         Editor
       </h2>
 
-      <PixelGrid
-        pixels={pixels}
-        onStroke={stroke}
-        onStrokeStart={() => setHistory(beginStroke)}
-        onStrokeEnd={() => setHistory(endStroke)}
-      />
-
       <div role="group" aria-label="Templates" className="space-y-1">
         <p className="text-sm font-bold text-white">Start from a template</p>
         <div className="grid grid-cols-3 gap-2">
@@ -93,7 +86,20 @@ export function Editor() {
             </button>
           ))}
         </div>
+        <a
+          href="#export"
+          className="flex min-h-11 items-center justify-center rounded border-2 border-amber-300 px-3 font-bold text-amber-300 focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-amber-300"
+        >
+          Go to downloads
+        </a>
       </div>
+
+      <PixelGrid
+        pixels={pixels}
+        onStroke={stroke}
+        onStrokeStart={() => setHistory(beginStroke)}
+        onStrokeEnd={() => setHistory(endStroke)}
+      />
 
       <div role="group" aria-label="History and mirror" className="grid grid-cols-3 gap-2">
         <button type="button" className={ACTION_CLASS} disabled={!canUndo(history)} onClick={() => setHistory(undo)}>
@@ -181,7 +187,7 @@ export function Editor() {
           spellCheck={false}
           placeholder="Up to 10: A-Z 0-9 $"
           onChange={(e) => setTicker(sanitizeTicker(e.target.value))}
-          className="min-h-11 w-full rounded border-2 border-neutral-500 bg-neutral-900 px-3 font-mono text-lg text-white uppercase focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-amber-300"
+          className="min-h-11 w-full rounded border-2 border-neutral-500 bg-neutral-900 px-3 font-mono text-lg text-white uppercase placeholder:text-neutral-400 focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-amber-300"
         />
         <div role="group" aria-label="Frame" className="grid grid-cols-3 gap-2">
           {FRAMES.map((f) => (
@@ -201,7 +207,7 @@ export function Editor() {
           ))}
         </div>
         <BadgePreview pixels={pixels} ticker={ticker} frame={frame} />
-        <div role="group" aria-label="Export" className="grid grid-cols-2 gap-2">
+        <div id="export" role="group" aria-label="Export" className="grid scroll-mt-2 grid-cols-2 gap-2">
           <button type="button" className={ACTION_CLASS} onClick={() => download('badge')}>
             Download badge
           </button>

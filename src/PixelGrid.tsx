@@ -1,4 +1,11 @@
-import { memo, useRef, type MouseEvent as ReactMouseEvent, type PointerEvent as ReactPointerEvent } from 'react'
+import {
+  memo,
+  useRef,
+  useState,
+  type KeyboardEvent as ReactKeyboardEvent,
+  type MouseEvent as ReactMouseEvent,
+  type PointerEvent as ReactPointerEvent,
+} from 'react'
 import { PALETTE } from './palette.ts'
 import { GRID_SIZE, type Cell, type Pixels } from './pixels.ts'
 
@@ -13,15 +20,26 @@ interface Props {
   onStrokeEnd?: () => void
 }
 
-const CellView = memo(function CellView({ x, y, value }: { x: number; y: number; value: Cell }) {
+const CellView = memo(function CellView({
+  x,
+  y,
+  value,
+  cursor,
+}: {
+  x: number
+  y: number
+  value: Cell
+  cursor: boolean
+}) {
   return (
     <div
+      data-cursor={cursor ? 'true' : undefined}
       data-testid={`cell-${x}-${y}`}
       data-x={x}
       data-y={y}
       data-color={value === null ? '' : String(value)}
       style={value === null ? undefined : { backgroundColor: PALETTE[value].hex }}
-      className={value === null ? 'bg-neutral-900' : undefined}
+      className={`${value === null ? 'bg-neutral-900' : ''} ${cursor ? 'z-10 outline-2 -outline-offset-2 outline-amber-300 ring-2 ring-black' : ''}`}
     />
   )
 })
@@ -41,6 +59,26 @@ function cellAt(e: ReactPointerEvent<HTMLElement> | ReactMouseEvent<HTMLElement>
 
 export function PixelGrid({ pixels, onStroke, onStrokeStart, onStrokeEnd }: Props) {
   const last = useRef<Point | null>(null)
+  // Keyboard cursor: arrow keys move it, Space or Enter applies the current tool to that cell.
+  const [cursor, setCursor] = useState<Point>([0, 0])
+  const [focused, setFocused] = useState(false)
+
+  const key = (e: ReactKeyboardEvent<HTMLDivElement>) => {
+    const step: Record<string, Point> = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1] }
+    const d = step[e.key]
+    if (d) {
+      e.preventDefault()
+      setCursor(([x, y]) => [
+        Math.min(GRID_SIZE - 1, Math.max(0, x + d[0])),
+        Math.min(GRID_SIZE - 1, Math.max(0, y + d[1])),
+      ])
+    } else if (e.key === ' ' || e.key === 'Enter') {
+      e.preventDefault()
+      onStrokeStart?.()
+      onStroke(cursor, cursor)
+      onStrokeEnd?.()
+    }
+  }
 
   const down = (e: ReactPointerEvent<HTMLDivElement>) => {
     if (e.pointerType === 'mouse' && e.button !== 0) return
@@ -74,8 +112,12 @@ export function PixelGrid({ pixels, onStroke, onStrokeStart, onStrokeEnd }: Prop
   return (
     <div
       role="group"
-      aria-label="Pixel grid, 32 by 32"
+      tabIndex={0}
+      aria-label="Pixel grid, 32 by 32. Arrow keys move, Space or Enter applies the current tool."
       data-testid="pixel-grid"
+      onKeyDown={key}
+      onFocus={() => setFocused(true)}
+      onBlur={() => setFocused(false)}
       onPointerDown={down}
       onPointerMove={move}
       onPointerUp={end}
@@ -102,11 +144,13 @@ export function PixelGrid({ pixels, onStroke, onStrokeStart, onStrokeEnd }: Prop
         width: '100%',
         userSelect: 'none',
       }}
-      className="cursor-crosshair border border-neutral-600 bg-neutral-700"
+      className="cursor-crosshair border border-neutral-600 bg-neutral-700 focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-amber-300"
     >
-      {pixels.map((value, i) => (
-        <CellView key={i} x={i % GRID_SIZE} y={Math.floor(i / GRID_SIZE)} value={value} />
-      ))}
+      {pixels.map((value, i) => {
+        const x = i % GRID_SIZE
+        const y = Math.floor(i / GRID_SIZE)
+        return <CellView key={i} x={x} y={y} value={value} cursor={focused && x === cursor[0] && y === cursor[1]} />
+      })}
     </div>
   )
 }

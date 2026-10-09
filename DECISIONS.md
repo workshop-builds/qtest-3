@@ -61,3 +61,9 @@ Why: 512 is not a multiple of 36, so an exact whole-number fit is impossible. In
 Decision: templates are built by small drawing helpers (rectangles, discs, symmetric rows, a star polygon, an auto outline) into frozen 32x32 palette-index grids, not stored as 1024-number literals. The saved badge is `{v:1, pixels, ticker, frame}` as JSON under `pixel-badge:v1`, written on every change and validated strictly on load; any failure gives an empty badge. Undo history is not saved.
 
 Why: code is easier to review and tweak than raw arrays, and palette colors are looked up by name so they cannot drift. Strict validation means a damaged or hand-edited entry can never crash the editor. Skipping history keeps the stored data small and the format simple, since the requirement is to get the badge back.
+
+## 2026-10-09: Phone polish: templates first, keyboard grid, checks as tests
+
+Decision: the template row and a "Go to downloads" link (`#export`) sit above the grid, so the one-minute flow starts with no scrolling or hunting. The grid is focusable (`tabindex=0`) with a keyboard cursor: arrows move, Space or Enter applies the current tool as one undo step. Contrast is checked by a test that computes WCAG ratios for the Tailwind colors used (all at least 4.5:1) and checks that the source uses only those text colors; the placeholder color was raised to neutral-400. The "no external URLs" check is `scripts/check-dist.mjs`, run at the end of `npm run build` and unit tested. `@types/node` is a dev dependency for the tests that read files.
+
+Why: the plan asks for these to be verified, and jsdom has no layout or computed styles, so class-level checks and pure calculations are the verifiable option. Tests and the build script keep a later change from quietly breaking them.
