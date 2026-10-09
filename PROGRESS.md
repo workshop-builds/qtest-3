@@ -27,3 +27,20 @@ What changed:
 Not checked: layout in a real browser at 360x640 (jsdom has no layout). Sizes follow from the CSS (grid width 100% of a padded container, swatches `min-h-11 min-w-11`).
 
 Next: Milestone 2, fill, undo, redo and mirror. Stroke-level undo needs the drag to be one history step: `PixelGrid` already reports press and moves separately, so the editor should snapshot on press and commit on release.
+
+## Review of milestone 1
+
+Approved.
+
+Checked on 2026-10-09 (claude-opus-5-5), against the PLAN.md criteria, by reading the code and running it:
+- `npm ci && npm test && npm run build`: passes; 24/24 tests.
+- 32x32 grid: 1024 cells in a CSS grid, `aspect-ratio: 1/1`, `width: 100%` inside a `px-4` container (about 328 px at a 360 px viewport, border-box), so it does not scroll sideways. `touch-action: none` is set on the grid.
+- Palette: exactly 16 colors (tested). Swatches are `h-11 min-h-11 min-w-11` (44 px) in an `auto-fill minmax(44px, 1fr)` grid (6 columns at 328 px). The selected swatch has a ring and a check mark, plus `aria-pressed`.
+- Draw/erase: pointer down paints, and pointer move paints a Bresenham line from the last cell, so no cells are skipped. Pointer capture plus mapping from the bounding box keeps touch drags working. Erase uses the same path with `null`. Tests cover click, drag (including a skipped cell) and erase.
+- Unit tests cover set, clear, out-of-range (negative, ≥32, fractional, NaN) and an invalid color. A component test checks that a click changes a cell's color.
+- About section: name "Quiet Test ($QTEST)", short description quoted as written in PROJECT.md, and the milestone list parsed from PLAN.md (tested).
+- No runtime network: the only URLs in `dist/` are XML namespace strings, a React error-docs string and the Tailwind licence comment. Nothing is fetched.
+
+Not verified: rendering in a real browser at 360x640. The fit follows from the CSS described above.
+
+Non-blocking notes for later milestones: grid cells have no accessible name or keyboard access (milestone 6 accessibility). Stroke grouping for undo is still to do (milestone 2).
