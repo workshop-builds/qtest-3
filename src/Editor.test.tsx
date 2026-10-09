@@ -97,6 +97,77 @@ describe('Editor', () => {
     for (let x = 0; x <= 4; x++) expect(color(x, 0)).toBe('')
   })
 
+  it('undo and redo are disabled with nothing to step through', () => {
+    render(<Editor />)
+    expect(screen.getByRole('button', { name: 'Undo' })).toBeDisabled()
+    expect(screen.getByRole('button', { name: 'Redo' })).toBeDisabled()
+    fireEvent.click(cell(0, 0))
+    expect(screen.getByRole('button', { name: 'Undo' })).toBeEnabled()
+    expect(screen.getByRole('button', { name: 'Redo' })).toBeDisabled()
+    fireEvent.click(screen.getByRole('button', { name: 'Undo' }))
+    expect(color(0, 0)).toBe('')
+    expect(screen.getByRole('button', { name: 'Undo' })).toBeDisabled()
+    expect(screen.getByRole('button', { name: 'Redo' })).toBeEnabled()
+    fireEvent.click(screen.getByRole('button', { name: 'Redo' }))
+    expect(color(0, 0)).toBe('4')
+  })
+
+  it('a whole drag is one undo step', () => {
+    render(<Editor />)
+    const grid = screen.getByTestId('pixel-grid')
+    fireEvent.pointerDown(cell(2, 2), { pointerId: 1, button: 0 })
+    fireEvent.pointerMove(cell(3, 2), { pointerId: 1 })
+    fireEvent.pointerMove(cell(6, 2), { pointerId: 1 })
+    fireEvent.pointerUp(grid, { pointerId: 1 })
+    fireEvent.click(screen.getByRole('button', { name: 'Undo' }))
+    for (let x = 2; x <= 6; x++) expect(color(x, 2)).toBe('')
+    expect(screen.getByRole('button', { name: 'Undo' })).toBeDisabled()
+  })
+
+  it('a new edit after undo clears redo', () => {
+    render(<Editor />)
+    fireEvent.click(cell(0, 0))
+    fireEvent.click(screen.getByRole('button', { name: 'Undo' }))
+    fireEvent.click(cell(1, 1))
+    expect(screen.getByRole('button', { name: 'Redo' })).toBeDisabled()
+  })
+
+  it('fill replaces the clicked region and is one undo step', () => {
+    render(<Editor />)
+    fireEvent.click(screen.getByRole('button', { name: 'Fill' }))
+    expect(screen.getByRole('button', { name: 'Fill' })).toHaveAttribute('aria-pressed', 'true')
+    fireEvent.pointerDown(cell(5, 5), { pointerId: 1, button: 0 })
+    fireEvent.pointerUp(cell(5, 5), { pointerId: 1 })
+    expect(color(0, 0)).toBe('4')
+    expect(color(31, 31)).toBe('4')
+    fireEvent.click(screen.getByRole('button', { name: 'Undo' }))
+    expect(color(0, 0)).toBe('')
+    expect(color(31, 31)).toBe('')
+  })
+
+  it('fill does not refill while dragging', () => {
+    render(<Editor />)
+    fireEvent.click(cell(1, 0))
+    fireEvent.click(screen.getByRole('button', { name: 'Blue' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Fill' }))
+    const grid = screen.getByTestId('pixel-grid')
+    fireEvent.pointerDown(cell(5, 5), { pointerId: 1, button: 0 })
+    fireEvent.pointerMove(cell(1, 0), { pointerId: 1 })
+    fireEvent.pointerUp(grid, { pointerId: 1 })
+    expect(color(1, 0)).toBe('4') // the original red/default cell kept its color
+  })
+
+  it('mirror flips the drawing in one undoable step', () => {
+    render(<Editor />)
+    fireEvent.click(cell(2, 3))
+    fireEvent.click(screen.getByRole('button', { name: 'Mirror' }))
+    expect(color(2, 3)).toBe('')
+    expect(color(29, 3)).toBe('4')
+    fireEvent.click(screen.getByRole('button', { name: 'Undo' }))
+    expect(color(2, 3)).toBe('4')
+    expect(color(29, 3)).toBe('')
+  })
+
   it('picking a color switches back to draw mode', () => {
     render(<Editor />)
     fireEvent.click(screen.getByRole('button', { name: 'Erase' }))

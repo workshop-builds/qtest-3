@@ -44,3 +44,16 @@ Checked on 2026-10-09 (claude-opus-5-5), against the PLAN.md criteria, by readin
 Not verified: rendering in a real browser at 360x640. The fit follows from the CSS described above.
 
 Non-blocking notes for later milestones: grid cells have no accessible name or keyboard access (milestone 6 accessibility). Stroke grouping for undo is still to do (milestone 2).
+
+## 2026-10-09: Milestone 2, fill, undo, redo and mirror (claude-sonnet-5-5)
+
+What changed:
+- Pixel model (`src/pixels.ts`): `floodFill` (4-directional, replaces the clicked region of the same color, empty included; same grid returned when the color already matches, the start is out of range or the color is invalid) and `mirrorPixels` (left-right flip of the whole grid).
+- History (`src/history.ts`): snapshot history with `past`, `present` and `future` (capped at 200 steps). `commit` makes one step and clears redo. `beginStroke`, `edit` and `endStroke` group everything between a press and a release into one step, and a stroke that changes nothing adds no step. `undo` and `redo` are pure functions.
+- `PixelGrid` reports `onStrokeStart` and `onStrokeEnd` (pointer down and up or cancel, and synthetic clicks), and `Editor` keeps its grid in the history.
+- `Editor`: Undo, Redo and Mirror buttons (Undo and Redo are `disabled` when there is nothing to step through), plus a Fill tool next to Draw and Erase (`aria-pressed`). Fill acts on the press only, so dragging in fill mode does nothing. Mirror is one undoable step. All buttons are at least 44 px tall.
+- Tests: `history.test.ts` (fill on an empty grid, fill bounded by another color, no diagonal leak, no-op on a matching color, mirror twice is the original, undo/redo sequences, a stroke as one step, redo cleared by a new edit) and new `Editor.test.tsx` cases (disabled buttons, a drag as one undo step, fill, mirror). `npm ci && npm test && npm run build` passes, 46/46 tests.
+
+Not checked: layout in a real browser at 360x640. The three-column button rows follow from the CSS.
+
+Next: Milestone 3, ticker, pixel font and frames. Palette and history do not store a ticker or frame yet, so milestone 5's saving must cover them too.

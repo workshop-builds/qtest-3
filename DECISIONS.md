@@ -37,3 +37,9 @@ Why: DOM cells are easy to test with Testing Library and need no canvas mock. Th
 Decision: a pointer-down paints at once. A `click` event only paints when `detail === 0` (keyboard or assistive-tech activation, or a synthetic click).
 
 Why: a real click is already covered by its pointer-down, and painting is idempotent either way, so this only avoids redundant work while keeping non-pointer activation working.
+
+## 2026-10-09: Undo is whole-grid snapshots, strokes are grouped by the grid's press and release
+
+Decision: history keeps immutable 32x32 snapshots (max 200 steps) instead of diffs. `PixelGrid` signals stroke start and end, and edits made between them join one undo step. Fill only acts on the press (not while dragging).
+
+Why: grids are already immutable arrays, so snapshots are trivial, correct and easy to test, and the memory cost is small (1024 cells per step). Grouping on press and release gives "one drag, one step" without timers. Re-filling on every cell crossed during a drag would be surprising and expensive.

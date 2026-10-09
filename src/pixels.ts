@@ -67,6 +67,42 @@ export function lineCells(x0: number, y0: number, x1: number, y1: number): [numb
   return cells
 }
 
+/**
+ * Flood fill (4-directional): replaces the contiguous region of cells that share the color of (x, y),
+ * empty included, with value. An out-of-range start, an invalid value, or a region that already has
+ * that color returns the same grid.
+ */
+export function floodFill(pixels: Pixels, x: number, y: number, value: Cell): Pixels {
+  if (!inRange(x, y)) return pixels
+  if (value !== null && !(Number.isInteger(value) && value >= 0 && value < PALETTE.length)) return pixels
+  const target = pixels[y * GRID_SIZE + x]
+  if (target === value) return pixels
+  const next = pixels.slice()
+  const stack: number[] = [y * GRID_SIZE + x]
+  while (stack.length > 0) {
+    const i = stack.pop()!
+    if (next[i] !== target) continue
+    next[i] = value
+    const cx = i % GRID_SIZE
+    if (cx > 0) stack.push(i - 1)
+    if (cx < GRID_SIZE - 1) stack.push(i + 1)
+    if (i >= GRID_SIZE) stack.push(i - GRID_SIZE)
+    if (i < GRID_SIZE * (GRID_SIZE - 1)) stack.push(i + GRID_SIZE)
+  }
+  return next
+}
+
+/** Flips the whole drawing left to right. An already symmetric drawing returns the same grid. */
+export function mirrorPixels(pixels: Pixels): Pixels {
+  const next = pixels.slice()
+  for (let y = 0; y < GRID_SIZE; y++) {
+    for (let x = 0; x < GRID_SIZE; x++) {
+      next[y * GRID_SIZE + x] = pixels[y * GRID_SIZE + (GRID_SIZE - 1 - x)]
+    }
+  }
+  return next.every((c, i) => c === pixels[i]) ? pixels : next
+}
+
 /** Sets (or clears, for null) every cell on a line. */
 export function paintLine(pixels: Pixels, x0: number, y0: number, x1: number, y1: number, value: Cell): Pixels {
   let next = pixels

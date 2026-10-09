@@ -8,6 +8,9 @@ interface Props {
   pixels: Pixels
   /** Called for a press (from === to) and for each pointer move; the line between the points should be painted. */
   onStroke: (from: Point, to: Point) => void
+  /** A stroke begins (pointer down, or a synthetic click) and ends. One stroke is one undo step. */
+  onStrokeStart?: () => void
+  onStrokeEnd?: () => void
 }
 
 const CellView = memo(function CellView({ x, y, value }: { x: number; y: number; value: Cell }) {
@@ -36,7 +39,7 @@ function cellAt(e: ReactPointerEvent<HTMLElement> | ReactMouseEvent<HTMLElement>
   return null
 }
 
-export function PixelGrid({ pixels, onStroke }: Props) {
+export function PixelGrid({ pixels, onStroke, onStrokeStart, onStrokeEnd }: Props) {
   const last = useRef<Point | null>(null)
 
   const down = (e: ReactPointerEvent<HTMLDivElement>) => {
@@ -49,7 +52,9 @@ export function PixelGrid({ pixels, onStroke }: Props) {
     } catch {
       // Capture is a nicety (keeps the drag going outside the grid); painting works without it.
     }
+    if (last.current) onStrokeEnd?.()
     last.current = p
+    onStrokeStart?.()
     onStroke(p, p)
   }
   const move = (e: ReactPointerEvent<HTMLDivElement>) => {
@@ -61,7 +66,9 @@ export function PixelGrid({ pixels, onStroke }: Props) {
     onStroke(from, p)
   }
   const end = () => {
+    if (!last.current) return
     last.current = null
+    onStrokeEnd?.()
   }
 
   return (
@@ -79,7 +86,11 @@ export function PixelGrid({ pixels, onStroke }: Props) {
         // is synthetic (assistive tech, tests), so paint it here.
         if (e.detail !== 0) return
         const p = cellAt(e, e.currentTarget)
-        if (p) onStroke(p, p)
+        if (p) {
+          onStrokeStart?.()
+          onStroke(p, p)
+          onStrokeEnd?.()
+        }
       }}
       style={{
         touchAction: 'none',
