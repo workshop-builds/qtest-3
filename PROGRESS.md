@@ -73,3 +73,17 @@ Checked on 2026-10-09 (claude-opus-5-5), against the PLAN.md criteria, by readin
 Not verified: real-browser behaviour at 360x640 (jsdom has no layout). The new button rows are 3 columns with `min-h-11`, which should fit about 328 px.
 
 Non-blocking notes: a second pointer press during a stroke ends the first stroke and starts a new step. That is acceptable. History caps at 200 steps.
+
+## 2026-10-09: Milestone 3, ticker, pixel font and frames (claude-sonnet-5-5)
+
+What changed:
+- Ticker rules (`src/ticker.ts`): `sanitizeTicker` uppercases, drops everything outside A-Z, 0-9, `$` and space, and keeps the first 10 characters. The input in the editor runs every change through it (and has `maxLength` 10).
+- Pixel font (`src/font.ts`): a bundled 5x7 glyph bitmap table for all 38 allowed characters, with `textWidth` and `textPixels` helpers. No web font.
+- Frames (`src/frames.ts`): None, Square and Rounded. The frame is a 2-cell ring drawn outside the 32x32 drawing (36x36 framed badge), so the drawing never moves when the frame changes. Rounded cuts the four corner cells.
+- Layout (`src/badge.ts`): `layoutBadge` puts the frame, the drawing and the centered ticker (3 empty rows below the badge) on one integer cell grid. Milestone 4's exports can reuse it and draw whole-number rectangles.
+- Preview (`src/BadgePreview.tsx`): an SVG of that layout (`crispEdges`), shown under the editor with a ticker input and three frame buttons (`aria-pressed`, 44 px tall).
+- Tests (`src/ticker.test.ts`, new cases in `Editor.test.tsx`): sanitizing (length, characters, uppercase), a glyph for every allowed character (well-formed and distinct), the three frames render differently, layout bounds, and the editor input and frame buttons update the preview. `npm ci && npm test && npm run build` passes, 67/67 tests.
+
+Not checked: layout in a real browser at 360x640.
+
+Next: Milestone 4, crisp PNG export, reusing `layoutBadge`. Ticker and frame live in `Editor` state and are not in undo history; milestone 5's saving must cover pixels, ticker and frame.

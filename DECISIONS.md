@@ -43,3 +43,9 @@ Why: a real click is already covered by its pointer-down, and painting is idempo
 Decision: history keeps immutable 32x32 snapshots (max 200 steps) instead of diffs. `PixelGrid` signals stroke start and end, and edits made between them join one undo step. Fill only acts on the press (not while dragging).
 
 Why: grids are already immutable arrays, so snapshots are trivial, correct and easy to test, and the memory cost is small (1024 cells per step). Grouping on press and release gives "one drag, one step" without timers. Re-filling on every cell crossed during a drag would be surprising and expensive.
+
+## 2026-10-09: Frame is a ring outside the drawing; one shared layout for preview and exports
+
+Decision: frames are a 2-cell ring around the 32x32 drawing (36x36 framed badge), in Yellow, and the ticker is white 5x7 text centered 3 rows below it. `layoutBadge` computes all colored cells on one integer grid; the preview renders it as SVG rects, and milestone 4's exports should draw the same cells as whole-number rectangles. Ticker and frame are plain editor state, not undo history.
+
+Why: a ring outside the drawing means switching frames never covers or moves the artwork. One layout function keeps the preview and the PNGs identical and makes the frame/font output testable without a canvas. Undo is specified for pixel edits only.

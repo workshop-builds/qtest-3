@@ -1,5 +1,8 @@
 import { useState } from 'react'
+import { BadgePreview } from './BadgePreview.tsx'
+import { FRAMES, type FrameId } from './frames.ts'
 import { PixelGrid, type Point } from './PixelGrid.tsx'
+import { MAX_TICKER_LENGTH, sanitizeTicker } from './ticker.ts'
 import { PALETTE } from './palette.ts'
 import { createPixels, floodFill, mirrorPixels, paintLine } from './pixels.ts'
 import {
@@ -30,6 +33,8 @@ export function Editor() {
   const [history, setHistory] = useState<History>(() => createHistory(createPixels()))
   const [color, setColor] = useState(4)
   const [mode, setMode] = useState<Mode>('draw')
+  const [ticker, setTicker] = useState('')
+  const [frame, setFrame] = useState<FrameId>('none')
   const pixels = history.present
 
   const stroke = (from: Point, to: Point) => {
@@ -125,6 +130,43 @@ export function Editor() {
             </button>
           )
         })}
+      </div>
+
+      <div className="space-y-2 border-t border-neutral-700 pt-3">
+        <label htmlFor="ticker-input" className="block font-bold text-white">
+          Ticker
+        </label>
+        <input
+          id="ticker-input"
+          type="text"
+          value={ticker}
+          maxLength={MAX_TICKER_LENGTH}
+          autoCapitalize="characters"
+          autoComplete="off"
+          autoCorrect="off"
+          spellCheck={false}
+          placeholder="Up to 10: A-Z 0-9 $"
+          onChange={(e) => setTicker(sanitizeTicker(e.target.value))}
+          className="min-h-11 w-full rounded border-2 border-neutral-500 bg-neutral-900 px-3 font-mono text-lg text-white uppercase focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-amber-300"
+        />
+        <div role="group" aria-label="Frame" className="grid grid-cols-3 gap-2">
+          {FRAMES.map((f) => (
+            <button
+              key={f.id}
+              type="button"
+              aria-pressed={frame === f.id}
+              onClick={() => setFrame(f.id)}
+              className={`min-h-11 min-w-11 rounded border-2 px-3 font-bold focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-amber-300 ${
+                frame === f.id
+                  ? 'border-amber-300 bg-amber-300 text-black'
+                  : 'border-neutral-500 bg-neutral-900 text-white'
+              }`}
+            >
+              {f.label}
+            </button>
+          ))}
+        </div>
+        <BadgePreview pixels={pixels} ticker={ticker} frame={frame} />
       </div>
     </section>
   )

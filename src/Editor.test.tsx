@@ -6,6 +6,46 @@ import { PALETTE } from './palette.ts'
 const cell = (x: number, y: number) => screen.getByTestId(`cell-${x}-${y}`)
 const color = (x: number, y: number) => cell(x, y).getAttribute('data-color')
 
+describe('Editor ticker and frames', () => {
+  it('uppercases and filters typed ticker text, and limits it to 10 characters', () => {
+    render(<Editor />)
+    const input = screen.getByLabelText('Ticker') as HTMLInputElement
+    fireEvent.change(input, { target: { value: 'qt-est!' } })
+    expect(input.value).toBe('QTEST')
+    fireEvent.change(input, { target: { value: 'abcdefghijklmn' } })
+    expect(input.value).toBe('ABCDEFGHIJ')
+    expect(screen.getByTestId('badge-preview')).toHaveAttribute('data-ticker', 'ABCDEFGHIJ')
+  })
+
+  it('draws the ticker on the preview', () => {
+    render(<Editor />)
+    const count = () => screen.getByTestId('badge-preview').querySelectorAll('rect').length
+    expect(count()).toBe(0)
+    fireEvent.change(screen.getByLabelText('Ticker'), { target: { value: 'A' } })
+    expect(count()).toBeGreaterThan(0)
+  })
+
+  it('shows the picked frame on the preview', () => {
+    render(<Editor />)
+    const preview = screen.getByTestId('badge-preview')
+    const counts: number[] = []
+    for (const name of ['None', 'Square', 'Rounded']) {
+      fireEvent.click(screen.getByRole('button', { name }))
+      expect(screen.getByRole('button', { name })).toHaveAttribute('aria-pressed', 'true')
+      expect(preview).toHaveAttribute('data-frame', name.toLowerCase())
+      counts.push(preview.querySelectorAll('rect').length)
+    }
+    expect(counts[0]).toBe(0)
+    expect(counts[1]).toBeGreaterThan(counts[2])
+    expect(counts[2]).toBeGreaterThan(0)
+  })
+
+  it('has frame buttons of at least 44px height', () => {
+    render(<Editor />)
+    expect(screen.getByRole('button', { name: 'Square' }).className).toContain('min-h-11')
+  })
+})
+
 describe('Editor', () => {
   it('renders a 32x32 grid with touch-action none', () => {
     render(<Editor />)
