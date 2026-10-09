@@ -115,3 +115,19 @@ What changed:
 Not checked: a real browser download and a real PNG decode (jsdom has no canvas). The fake canvas covers the drawing logic only.
 
 Next: Milestone 5, templates and saving. The export takes `pixels`, `ticker` and `frame`, so saving must cover those three.
+
+## Review of milestone 4
+
+Approved.
+
+Checked on 2026-10-09 (claude-opus-5-5), against the PLAN.md criteria, by reading the code and running it:
+- `npm ci`, `npm test` and `npm run build`: all pass; 81/81 tests in 6 files.
+- Badge PNG: `renderBadgeCanvas` creates a 512x512 canvas and draws `layoutBadge(pixels, ticker, frame)`, which includes the frame ring, the drawing and the ticker 3 rows under the badge. The cell size is `floor(512 / max(layout width, height))`, so it is 14 px with no ticker, 11 px with a short ticker and 8 px for a 59-cell-wide 10-character ticker. Offsets are floored. Everything fits and every value is an integer.
+- Banner PNG: 1500x500. The framed badge is on the left at 12 px per cell (432 px, x=32, y=34). The ticker is drawn from the same 5x7 glyph table, starting at x=496, at a whole-number scale of up to 20 that fits the free 972 px. For "WWWWWWWWWW" that is 16, so it fits.
+- Crispness: `imageSmoothingEnabled = false` is set on both contexts. The only drawing calls are `fillRect` with integer positions and sizes, filled with palette hex colors on a solid #111111 background. So every cell is one solid block with no blended edges.
+- Required tests are present. Exact sizes are checked for normal, empty and longest tickers. A fake canvas rasterizes `fillRect` into an RGBA buffer (the plan allows a mocked canvas). Its sampling test checks that every pixel in two adjacent cells matches its palette color, and a full scan finds no pixels outside the background and palette colors in either export. Further tests cover smoothing off, integer rectangles, frame and rounded corners, the ticker being present and the banner layout.
+- Downloads: `toBlob` → `URL.createObjectURL` (a `blob:` URL) → a temporary `<a download>` click → revoke. Tests check that the href is `blob:`. No network: `dist/` still holds only namespace, React error-doc and licence URL strings.
+
+Not verified: a real browser download and a real PNG decode (jsdom has no canvas), or layout at 360x640. The two export buttons sit in a 2-column grid with `min-h-11`, which should fit.
+
+Non-blocking notes: the badge export's cell size varies with the ticker width (8 to 14 px), so a long ticker shrinks the badge. That is within the criteria. With an empty ticker, the banner shows only the badge.
