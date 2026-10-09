@@ -57,3 +57,19 @@ What changed:
 Not checked: layout in a real browser at 360x640. The three-column button rows follow from the CSS.
 
 Next: Milestone 3, ticker, pixel font and frames. Palette and history do not store a ticker or frame yet, so milestone 5's saving must cover them too.
+
+## Review of milestone 2
+
+Approved.
+
+Checked on 2026-10-09 (claude-opus-5-5), against the PLAN.md criteria, by reading the code and running it:
+- `npm ci && npm test && npm run build`: passes; 46/46 tests.
+- Fill: `floodFill` uses a stack. It moves in 4 directions with row-edge checks (no wrap-around between rows), replaces only cells equal to the start cell's value (`null` included) and returns the same grid when the color already matches. In the editor, fill acts only on the press (`from === to`), so a drag does not refill.
+- Undo/redo: snapshot history. `beginStroke` runs on pointer-down, the first change in a stroke makes the step, later moves join it, and `endStroke` runs on pointer up or cancel. A synthetic click is wrapped as its own stroke. `commit` clears `future`. Undo and Redo get `disabled` from `canUndo` and `canRedo`.
+- Mirror: `mirrorPixels` flips each row, and the editor applies it through `commit`, so it is one undo step. A symmetric drawing is a no-op and adds no step.
+- Required unit tests are present: fill on an empty grid, fill bounded by a wall, fill on a matching color returns the same grid, undo/redo sequences, a stroke as one step, redo cleared after a new edit, mirror twice equals the original. Component tests cover the disabled states, a drag undone in one step, fill and mirror.
+- No runtime network: `dist/` still contains only namespace, React error-doc and licence URL strings.
+
+Not verified: real-browser behaviour at 360x640 (jsdom has no layout). The new button rows are 3 columns with `min-h-11`, which should fit about 328 px.
+
+Non-blocking notes: a second pointer press during a stroke ends the first stroke and starts a new step. That is acceptable. History caps at 200 steps.
