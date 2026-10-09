@@ -173,3 +173,22 @@ What changed:
 Not checked: layout in a real browser at 360x640. A headless Chromium screenshot was blocked in this session, so widths and horizontal scrolling are argued from the CSS only (grid `width: 100%`, 3-column button rows, `auto-fill minmax(44px, 1fr)` palette).
 
 Next: all six milestones are done; a later session could do a real-browser check.
+
+## Review of milestone 6
+
+Approved.
+
+Checked on 2026-10-09 (claude-opus-5-5), against the PLAN.md criteria, by reading the code and running it:
+- `npm ci`, `npm test` and `npm run build`: all pass; 123/123 tests in 8 files. The build now ends with `node scripts/check-dist.mjs dist`, which reported "no external URLs".
+- 360x640 layout (read from the CSS only): `main` is `px-4`, so content is 328 px wide. The grid is `width: 100%` with a 1:1 aspect ratio. The palette is `auto-fill minmax(44px, 1fr)` with a 4 px gap, which gives 6 columns of 50 px or more. Template, history, tool and frame rows are 3 columns of about 104 px, and the export row is 2 columns of 160 px. Labels can wrap, so nothing forces a horizontal overflow. Every button, link and the ticker input has `min-h-11`, and swatches are `h-11 w-full min-w-11`. Grid cells are about 10 px, which is inherent to a 32x32 editor on a phone. Drag painting and the keyboard cursor cover them.
+- Contrast: I checked the pairs in the test against Tailwind v4 values. White on neutral-900, neutral-100/200/300 on neutral-950, the neutral-400 placeholder (about 7:1), black on amber-300 and red-300 error text all pass AA. Control borders in neutral-500 on the dark page are above 3:1. Disabled buttons use `opacity-40`, which WCAG exempts. A source scan limits `text-*` color classes to the checked set.
+- Accessible names and focus: buttons have text or an `aria-label` (swatches use color names). The grid is a focusable group with a descriptive label, arrow-key movement, Space/Enter to apply the tool and a visible cursor. Every button, link, input and the grid has a `focus-visible:outline` amber style. The About `<summary>` keeps the browser's default focus ring.
+- One-minute flow: the first six editor buttons are the templates, and a "Go to downloads" link to `#export` sits right under them, above the grid. `polish.test.tsx` uses Testing Library to run template → stroke edit → ticker → Rounded frame → Download badge and Download banner. It checks two `blob:` downloads named `pixel-badge-QTEST.png` and `pixel-banner-QTEST.png`, with no error alert.
+- Dist check: `findExternalUrls` covers script, link, img and other resource tags, including `srcset`. `findExternalCssUrls` covers `url()` and `@import`. Both are unit tested, along with `checkDist` on a good and a bad directory. The check runs as part of `npm run build`.
+- README describes the app, how to run it (`npm ci`, `dev`, `test`, `build`, `preview`) and the privacy promise (no accounts, no server, no tracking, local `blob:` downloads, `localStorage` only).
+
+All milestones in PLAN.md: each of milestones 1 to 6 has a builder entry and code in `src/`, and every test passes. In this session I re-read the required tests for milestones 1 to 3 and the component tests for 4 and 5 (`pixels.test.ts`, `history.test.ts`, `ticker.test.ts`, `Editor.test.tsx`, `App.test.tsx`). For the unit tests of milestones 4 and 5 (`export.test.ts`, `storage.test.ts`), I relied on their passing run and on the earlier reviews. No milestone is missing.
+
+Not verified: real-browser rendering at 360x640, and real downloads. A shell browser check was not available in this review session. Layout conclusions come from the CSS.
+
+Non-blocking notes: the polish test named "uses touch-action none on the grid…" only checks the viewport meta tag (touch-action is checked in `Editor.test.tsx`). At 640 px tall, the export buttons are below the fold and are reached through the "Go to downloads" link.
