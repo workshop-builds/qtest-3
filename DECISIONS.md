@@ -49,3 +49,9 @@ Why: grids are already immutable arrays, so snapshots are trivial, correct and e
 Decision: frames are a 2-cell ring around the 32x32 drawing (36x36 framed badge), in Yellow, and the ticker is white 5x7 text centered 3 rows below it. `layoutBadge` computes all colored cells on one integer grid; the preview renders it as SVG rects, and milestone 4's exports should draw the same cells as whole-number rectangles. Ticker and frame are plain editor state, not undo history.
 
 Why: a ring outside the drawing means switching frames never covers or moves the artwork. One layout function keeps the preview and the PNGs identical and makes the frame/font output testable without a canvas. Undo is specified for pixel edits only.
+
+## 2026-10-09: Export draws the shared layout with integer rectangles on a solid background
+
+Decision: the badge PNG draws `layoutBadge` at the largest whole-number cell size that fits 512x512 (13 px), centered, so the 512 size is exact but the margin is not a multiple of the cell size. The banner draws the framed badge at 12 px per cell and the ticker at a whole-number scale on the right. Both PNGs have a solid #111111 background (not transparent), because the ticker is white and Black cells would vanish on a transparent one. Canvas creation is injectable, and tests use a fake canvas that records `fillRect` into a pixel buffer.
+
+Why: 512 is not a multiple of 36, so an exact whole-number fit is impossible. Integer scale with centering keeps every cell a hard-edged solid block, which is the requirement. A fake canvas lets the sampling tests run without a native canvas dependency, and the downloads use only `blob:` URLs.

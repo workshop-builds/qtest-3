@@ -103,3 +103,15 @@ Checked on 2026-10-09 (claude-opus-5-5), against the PLAN.md criteria, by readin
 Not verified: rendering in a real browser at 360x640. The preview is `w-full max-w-xs` (320 px) and the frame buttons are in 3 columns, which should fit.
 
 Non-blocking notes: because of `maxLength`, the browser cuts pasted text to 10 characters before sanitizing, so pasting "a-b-c-d-e-f-g" gives "ABCDE" rather than "ABCDEFG". That is still within the criterion (other characters are dropped). Ticker and frame are not in undo history or storage yet; milestone 5 must save them.
+
+## 2026-10-09: Milestone 4, crisp PNG export (claude-sonnet-5-5)
+
+What changed:
+- Export (`src/export.ts`): `renderBadgeCanvas` makes a 512x512 canvas with the framed badge and the ticker under it, drawn from `layoutBadge` at the largest whole-number cell size that fits (13 px for the 36x36 framed badge; the layout is centered). `renderBannerCanvas` makes a 1500x500 canvas with the framed badge on the left (12 px cells) and the ticker in the pixel font on the right (whole-number scale, up to 20, fitted to the free width). Both set `imageSmoothingEnabled = false`, fill a solid #111111 background and draw only `fillRect` with integer coordinates and sizes. A canvas factory parameter lets tests pass a fake canvas.
+- `downloadCanvas` encodes with `toBlob`, uses `URL.createObjectURL` (a `blob:` URL) on a temporary link with `download`, then revokes it. No network. File names come from the ticker (`pixel-badge-QTEST.png`, `pixel-banner.png` when empty).
+- Editor: "Download badge" and "Download banner" buttons (44 px tall) under the preview, a note that files are made in the browser, and an error message if PNG encoding fails.
+- Tests (`src/export.test.ts`, one case in `Editor.test.tsx`): a software fake canvas that rasterizes `fillRect` into an RGBA buffer. It checks exact sizes (also for empty and longest tickers), smoothing off, integer rectangles only, every pixel in a drawn cell equal to its palette color, no blended pixels anywhere (every pixel is the background or a palette color), frame color and rounded corners, ticker presence, banner layout, file names, blob-URL download and encoding failure. `npm ci && npm test && npm run build` passes, 81/81 tests.
+
+Not checked: a real browser download and a real PNG decode (jsdom has no canvas). The fake canvas covers the drawing logic only.
+
+Next: Milestone 5, templates and saving. The export takes `pixels`, `ticker` and `frame`, so saving must cover those three.

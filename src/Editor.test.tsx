@@ -1,5 +1,5 @@
-import { describe, expect, it } from 'vitest'
-import { fireEvent, render, screen } from '@testing-library/react'
+import { describe, expect, it, vi } from 'vitest'
+import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { Editor } from './Editor.tsx'
 import { PALETTE } from './palette.ts'
 
@@ -213,5 +213,27 @@ describe('Editor', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Erase' }))
     fireEvent.click(screen.getByRole('button', { name: 'Pink' }))
     expect(screen.getByRole('button', { name: 'Draw' })).toHaveAttribute('aria-pressed', 'true')
+  })
+})
+
+describe('Editor export buttons', () => {
+  it('has Download badge and Download banner buttons that save PNGs through blob URLs', async () => {
+    const blob = new Blob(['x'], { type: 'image/png' })
+    const fakeCtx = { fillRect: vi.fn(), fillStyle: '', imageSmoothingEnabled: true }
+    vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue(fakeCtx as never)
+    vi.spyOn(HTMLCanvasElement.prototype, 'toBlob').mockImplementation((cb) => cb(blob))
+    Object.assign(URL, { createObjectURL: vi.fn(() => 'blob:local/1'), revokeObjectURL: vi.fn() })
+    const names: string[] = []
+    vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(function (this: HTMLAnchorElement) {
+      expect(this.href.startsWith('blob:')).toBe(true)
+      names.push(this.download)
+    })
+    render(<Editor />)
+    fireEvent.change(screen.getByLabelText('Ticker'), { target: { value: 'qtest' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Download badge' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Download banner' }))
+    await waitFor(() => expect(names).toEqual(['pixel-badge-QTEST.png', 'pixel-banner-QTEST.png']))
+    expect(fakeCtx.imageSmoothingEnabled).toBe(false)
+    vi.restoreAllMocks()
   })
 })

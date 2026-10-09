@@ -4,6 +4,7 @@ import { FRAMES, type FrameId } from './frames.ts'
 import { PixelGrid, type Point } from './PixelGrid.tsx'
 import { MAX_TICKER_LENGTH, sanitizeTicker } from './ticker.ts'
 import { PALETTE } from './palette.ts'
+import { downloadCanvas, exportName, renderBadgeCanvas, renderBannerCanvas } from './export.ts'
 import { createPixels, floodFill, mirrorPixels, paintLine } from './pixels.ts'
 import {
   beginStroke,
@@ -35,7 +36,16 @@ export function Editor() {
   const [mode, setMode] = useState<Mode>('draw')
   const [ticker, setTicker] = useState('')
   const [frame, setFrame] = useState<FrameId>('none')
+  const [exportError, setExportError] = useState('')
   const pixels = history.present
+
+  const download = (kind: 'badge' | 'banner') => {
+    const render = kind === 'badge' ? renderBadgeCanvas : renderBannerCanvas
+    setExportError('')
+    downloadCanvas(render(pixels, ticker, frame), exportName(kind, ticker)).catch(() =>
+      setExportError('Could not create the PNG in this browser.'),
+    )
+  }
 
   const stroke = (from: Point, to: Point) => {
     if (mode === 'fill') {
@@ -167,6 +177,20 @@ export function Editor() {
           ))}
         </div>
         <BadgePreview pixels={pixels} ticker={ticker} frame={frame} />
+        <div role="group" aria-label="Export" className="grid grid-cols-2 gap-2">
+          <button type="button" className={ACTION_CLASS} onClick={() => download('badge')}>
+            Download badge
+          </button>
+          <button type="button" className={ACTION_CLASS} onClick={() => download('banner')}>
+            Download banner
+          </button>
+        </div>
+        <p className="text-sm text-neutral-300">PNG files are made in your browser. Nothing is uploaded.</p>
+        {exportError && (
+          <p role="alert" className="text-sm font-bold text-red-300">
+            {exportError}
+          </p>
+        )}
       </div>
     </section>
   )
